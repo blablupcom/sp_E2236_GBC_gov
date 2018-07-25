@@ -10,8 +10,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 
-#### FUNCTIONS 1.2
-import requests
+#### FUNCTIONS 1.0
 
 def validateFilename(filename):
     filenameregex = '^[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+_[0-9][0-9][0-9][0-9]_[0-9QY][0-9]$'
@@ -86,40 +85,38 @@ def convert_mth_strings ( mth_string ):
 
 #### VARIABLES 1.0
 
-entity_id = "E3532_FHDC_gov"
-url = "https://www.westsuffolk.gov.uk/Council/Finance_and_Statistics/paymentstosuppliers.cfm"
+entity_id = "E2236_GBC_gov"
+url = "https://www.gravesham.gov.uk/home/about-the-council/policies-strategies-open-data/transparency-and-open-data/expenditure-over-500"
 errors = 0
 data = []
 
 
 #### READ HTML 1.0
 
-html = requests.get(url)
-soup = BeautifulSoup(html.text, 'lxml')
+html = urllib2.urlopen(url)
+soup = BeautifulSoup(html, 'lxml')
 
 #### SCRAPE DATA
 
-blocks = soup.find('div', attrs={'id':'cs_control_1470'}).find_all('a', href=True)
-for block in blocks:
-        year_link = block['href']
-        if 'http' not in year_link:
-            year_link = 'https://www.westsuffolk.gov.uk' + year_link
-        else:
-            year_link = year_link
-        year_html = requests.get(year_link)
-        year_soup = BeautifulSoup(year_html.text, 'lxml')
-        f_blocks = year_soup.find('div', id='cs_control_1470').find_all('a')
-        for f_block in f_blocks:
-            if 'http' not in f_block['href']:
-                url = 'https://www.westsuffolk.gov.uk' + f_block['href']
-            else:
-                url = f_block['href']
-            file_name = f_block.text.replace('(CSV)', '').replace('-19', '').strip()
-            csvMth = file_name.split()[-2][:3]
-            csvYr = file_name[-4:]
-            csvMth = convert_mth_strings(csvMth.upper())
-            data.append([csvYr, csvMth, url])
-
+links = soup.find('div', 'span-8/12').find_all('a', attrs={'data-link-metadata':'xlsx'})
+for link in links:
+    url = link['href']
+    if 'http' not in url:
+        url = 'https://www.gravesham.gov.uk' + url
+    else:
+        url = url
+    file_name = link.text.strip()
+    if 'Q1' in file_name:
+        csvMth = 'Q1'
+    if 'Q2' in file_name:
+        csvMth = 'Q2'
+    if 'Q3' in file_name:
+        csvMth = 'Q3'
+    if 'Q4' in file_name:
+        csvMth = 'Q4'
+    csvYr = file_name[-4:]
+    csvMth = convert_mth_strings(csvMth.upper())
+    data.append([csvYr, csvMth, url])
 
 #### STORE DATA 1.0
 
